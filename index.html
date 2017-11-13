@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<style>
+		.test-input{
+			min-height: 500px;
+			max-width: 500px;
+			margin: 100px auto;
+		}
+		.phone{
+			width: 100%;
+			border-radius: 5px;
+			height: 40px;
+			line-height: 40px;
+			border: 1px solid rgba(0,0,0,0.7);
+			font-family: Arial, 'sans-serif';
+			font-size: 16px;
+		}
+	</style>
+	<title>Document</title>
+</head>
+<body>
+	<div class="test-input">
+		<input type="text" class="phone" id="phone"/>
+		<div id="lastSymbol" style="color: red; text-align: center; margin-top: 20px; font-size: 22px;"></div>
+		<div id="keyCode" style="color: red; text-align: center; margin-top: 20px; font-size: 22px;"></div>
+		<div id="output" style="color: red; text-align: center; margin-top: 20px; font-size: 22px;">test</div>
+
+	</div>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="phone.js"></script>
+    <script>
+        $(document).ready(function(){
+            var $phone = $('#phone');
+
+            if( $phone.length > 0 ){
+                $phone.lMask({mask: "+7(xxx)xxx-xx-xx"});
+            }
+        });
+    </script>
+</body>
+</html>

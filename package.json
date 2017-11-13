@@ -1,0 +1,46 @@
+{
+  "name": "kreativepixel",
+  "version": "1.0.0",
+  "description": "",
+  "main": "gulpfile.js",
+  "dependencies": {
+    "autoprefixer": "^7.1.1",
+    "browser-sync": "^2.18.12",
+    "gulp": "^3.9.1",
+    "gulp-autoprefixer": "^4.0.0",
+    "gulp-csscomb": "^3.0.8",
+    "gulp-cssmin": "^0.2.0",
+    "gulp-less": "^3.3.2",
+    "gulp-notify": "^3.0.0",
+    "gulp-plumber": "^1.1.0",
+    "gulp-postcss": "^7.0.0",
+    "gulp-pug": "^3.3.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-rev-append": "^0.1.8",
+    "gulp-sourcemaps": "^2.6.0",
+    "postcss-assets": "^4.1.0",
+    "postcss-nested": "^2.0.2",
+    "postcss-resemble-image": "^2.1.1",
+    "postcss-short": "^4.1.0"
+  },
+  "devDependencies": {
+    "gulp-autoprefixer": "^4.0.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-html-beautify": "^1.0.1",
+    "gulp-jsbeautifier": "^2.1.1",
+    "gulp-less": "^3.3.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/4webfan/kreativePixel.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/4webfan/kreativePixel/issues"
+  },
+  "homepage": "https://github.com/4webfan/kreativePixel#readme"
+}

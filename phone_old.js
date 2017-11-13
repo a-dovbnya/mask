@@ -27,16 +27,15 @@
              });*/
             // get char code
             $self.on("keypress", function (e) {
-                //alert("keyPress");
                 var textComponent;
                 var selectedText;
                 var startPos;
                 var endPos;
 
-                //param.charCode = e.charCode;
-                //param.charSymbol = String.fromCharCode(e.charCode);
+                param.charCode = e.charCode;
+                param.charSymbol = String.fromCharCode(e.charCode);
 
-                /*if (param.checkSymbol(e.charCode)) {
+                if (param.checkSymbol(e.charCode)) {
                     textComponent = e.target;
                     selectedText = "";
 
@@ -56,127 +55,238 @@
                         }
 
                     }
-                }*/
+                }
 
             });
-
 
             // interception delete and backspace button
             $self.on("keydown", function (e) {
-                //alert("keydown");
-                //console.log("e = ", e);
-                param.backspace = false;
-
                 // delete
                 if (e.keyCode === 46) {
-                    // delete
+                    var startPos;
+                    var endPos;
+                    var caretPos;
+                    var symb;
 
-                } else if (e.keyCode === 8 || e.keyCode === 229|| e.keyCode === 0) {
+                    textComponent = e.target;
+                    selectedText = "";
+
+                    if (textComponent.selectionStart !== undefined) {
+                        startPos = textComponent.selectionStart;
+                        endPos = textComponent.selectionEnd;
+                        selectedText = textComponent.value.substring(startPos, endPos);
+
+                        if (selectedText.length > 0) {
+                            // run deleted substr
+                            param.deleteSubstr(selectedText, startPos, endPos - startPos);
+                        } else {
+                            caretPos = param.getCaretPos(e.target);
+                            symb = param.formattedVal[caretPos];
+
+                            if (symb !== "-" || symb !== "(" || symb !== ")") {
+
+                                param.deleteSymbol(caretPos, true);
+                                param.formattedVal = param.strFormatted(param.val, param.processingMask);
+
+                                if (param.formattedVal !== false) {
+                                    param.charCode = 0;
+                                    param.charSymbol = 0;
+                                }
+
+                            }
+
+                            param.caretMoveFlag = true;
+                            param.caretPos = caretPos;
+                            param.caretMoveUp = true;
+
+                        }
+                    }
                     // backspace
-                    param.backspace = true;
-                    $("#output").html("backspace1");
+                } else if (e.keyCode === 8) {
+                    console.log("backspace");
+                    // backspace
+                    // selected text
+                    var textComponent = e.target;
+                    var selectedText;
 
+                    if (textComponent.selectionStart !== undefined) {
+                        startPos = textComponent.selectionStart;
+                        endPos = textComponent.selectionEnd;
+                        selectedText = textComponent.value.substring(startPos, endPos);
+                    }
+                    // selected text
+                    if (selectedText.length > 0) {
+                        // run delete substr
+                        param.deleteSubstr(selectedText, startPos, endPos - startPos);
+                    } else {
+                        console.log("no selected text");
+                        // delete symbol before caret
+                        caretPos = param.getCaretPos(e.target);
+                        symb = param.formattedVal[caretPos - 1];
+
+                        if (symb === "-" || symb === "(" || symb === ")") {
+
+                            param.charCode = 0;
+                            param.charSymbol = 0;
+
+                        } else {
+
+                            param.deleteSymbol(caretPos);
+                            param.formattedVal = param.strFormatted(param.val, param.processingMask);
+
+                            if (param.formattedVal !== false) {
+                                param.charCode = 0;
+                                param.charSymbol = 0;
+                                // output
+                                //$self.val(param.formattedVal);
+                            }
+
+                        }
+                        param.caretMoveFlag = true;
+                        param.caretPos = caretPos;
+                    }
                 }
-                $("#keyCode").html("keyCode - "+ e.keyCode);
-
             });
 
             $self.on("input", function (e) {
-                //alert("input");
-                console.log(e);
-                // Предыдущее состояние
-                var val = param.val;
-                var symbolInMask;
-                var firstFlag = false;
+                var charCode = param.charCode;
+                var charSymbol = param.charSymbol;
+                var index;
 
-                // Определим позицию коретки
-                param.caretPos = param.getCaretPos(e.target);
-
-                // Определяем новое состояние
                 param.currentVal = $self.val();
-                symbolInMask = param.activeMask[param.currentVal.length - 1];
 
-                // Определяем символ
-                param.charSymbol = param.currentVal[param.currentVal.length - 1];
-                $("#lastSymbol").html("Последний введенный символ - "+param.charSymbol);
+                console.log(param);
 
-                // Если вводим первый символ
-                if(param.currentVal.length === 1){
-                    firstFlag = true;
-                }
-                // Проверяем, какой символ стоит на текущей позиции в маске
-                if( !param.backspace) {
-                    if (symbolInMask === "x" || symbolInMask === param.charSymbol || parseInt(param.charSymbol) === 7 || parseInt(param.charSymbol) === 8 || parseInt(param.charSymbol) === 9) {
-                        console.log("in if");
-                        //alert(symbolInMask);
-                        if (param.checkSymbol(param.charSymbol, firstFlag)) {
-                            // Был введён новый символ и этот символ разрешен
+                if (charCode !== 0) {
 
-                            if (param.currentVal === "8") {
+                    //if (param.val.length === 0) {
+                    if (param.currentVal.length <= param.startOfPattern.length) {
+
+                        // it is first char
+                        if (param.checkSymbol(charCode, true)) {
+
+                            // Выбираем маску, если она не выбрана
+                            if( !param.activeMask.length ) {
+                                param.activeMask = param.defaultMask;
+                                //param.selectMask(charCode);
+                            }
+                            param.formattedVal = true;
+
+                            if( param.currentVal === "8" ){
                                 param.currentVal = "+7("
-                            } else if (param.currentVal === "9" && param.startOfPattern === "+7(") {
-                                param.currentVal = "+7(9";
-                            } else if (param.currentVal === "+" && param.startOfPattern === "+7(") {
-                                param.currentVal = "+7(";
-                            } else if (param.currentVal === "7" && param.startOfPattern === "+7(") {
-                                param.currentVal = "+7(";
+                            }
+                            if(param.currentVal === "9" && param.startOfPattern === "+7("){
+                                param.val = "+7(9";
                             }
 
-                            // Если в маске следом за текущем символом идет не число, до добавляем его к значению
-                            if (isNaN(param.activeMask[param.currentVal.length]) && param.activeMask[param.currentVal.length] !== "x" && param.activeMask[param.currentVal.length] !== undefined) {
-                                param.currentVal += param.activeMask[param.currentVal.length];
-                            }
-                            // Записываем новое состояние, если допустима длинна строки
-                            if (param.currentVal.length <= param.activeMask.length) {
+                            if(param.startOfPattern.indexOf(param.currentVal) != -1){
+                                // Первый введённый символ встречается в начале шиблона
+                                // Ввод этого символа можно разрешить
+
+                                // Если позиция найденного символа != 0, то выводим все начало шаблона
+                                // Как в случае +7(
+                                if( param.startOfPattern.indexOf(param.currentVal) === 0 ){
+                                    // Вводим первый символ
+                                    param.val = param.currentVal;
+                                }else{
+                                    // Вводим начало шаблона
+                                    param.val = param.startOfPattern;
+                                }
+
+                            }else if( param.startOfPattern.length === 0 ){
                                 param.val = param.currentVal;
                             }
 
                         }
-                    }
 
+                    } else if (param.val.length < param.limitSymbol && param.selectedSubstr.length === 0) {
+                        // is not first char
+                        if (param.checkSymbol(charCode)) {
 
-                } else {
-                    /*** Нажата клавиша backspace ***/
-                    $("#output").html("backspace2");
-                    if (param.backspace) {
-                        $("#output").html("backspace3");
+                            //if ((param.val.length === 1 && charCode === 57) || param.val.length > 1) {
+                            if (param.val.length === 1 || param.val.length > 1) {
 
-                        //alert("backspace");
-                        console.log("backspace");
-                        console.log("Текущее состояние = ", param.currentVal);
-                        if (param.currentVal.length <= param.activeMask.length) {
+                                if (param.startPos === param.formattedVal.length) {
+                                    param.val += String(charSymbol);
+                                } else {
 
-                            /* если последний символ не числовой, то удаляем его */
-                            //alert(param.currentVal[param.currentVal.length - 1]);
-                            if(isNaN(param.currentVal[param.currentVal.length - 1])){
-                                //alert(param.caretPos);
-                                e.target.setSelectionRange(param.caretPos - 1, param.caretPos - 1);
-                                /*param.currentVal = param.currentVal.split("");
-                                console.log("param.currentVal = ",param.currentVal);
-                                param.currentVal = param.currentVal.slice(0,param.currentVal.length - 1);
-                                console.log("param.currentVal = ",param.currentVal);
-                                param.currentVal = param.currentVal.join(",")
-                                console.log("param.currentVal = ",param.currentVal);*/
+                                    if (param.val.length !== param.limitSymbol) {
+                                        param.insertSymbol();
+                                        param.caretMoveFlag = true;
+                                        param.caretPos = param.startPos;
+                                        param.caretMoveUp = true;
+                                    }
+                                }
+
+                            }else{
+                                param.val += String(charSymbol);
                             }
-                            param.val = param.currentVal;
+
+                        } else {
+                            // if input first symbol and it is not number
+                            $self.val("");
                         }
+
                     }
+
+                    if (param.val.length <= param.limitSymbol && param.selectedSubstr.length > 0 && param.checkSymbol(charCode)) {
+                        // replace selected text
+                        param.deleteSubstr(param.selectedSubstr, param.startPos, param.endPos - param.startPos, String(param.charSymbol));
+                    }
+
+                    if (param.val === undefined) {
+                        param.val = "";
+                    }
+                    //console.log("formattedVal = ", param.formattedVal);
+                    param.formattedVal = param.strFormatted(param.val, param.processingMask);
+                    param.val = param.formattedVal;
+
+                    //onsole.log("formattedVal = ", param.formattedVal);
+
+                    if (param.formattedVal !== false) {
+                        $self.val(param.formattedVal);
+                    } else {
+                        if (param.charCode !== 43) {
+                            param.formattedVal = "";
+                            $self.val(param.formattedVal);
+                        }
+
+                    }
+                    //param.currentVal = param.formattedVal;
+                } else if (param.formattedVal.length !== 0) {
+
+                    if (param.formattedVal === false) {
+                        param.formattedVal = "";
+                    }
+
+                    //$self.val(param.formattedVal);
+                    param.currentVal = param.formattedVal;
                 }
 
+                if( param.currentVal.length > param.activeMask.length ){
+                    param.currentVal = param.formattedVal;
+                }
+                //param.currentVal = param.formattedVal;
 
+                // move cursor for "-()" symbols
+                if ( param.caretMoveFlag ) {
+                    $self.val(param.formattedVal);
 
-                console.log(param);
+                    console.log("caret Move");
+                    if (param.caretPos > 0) {
+                        if (param.caretMoveUp) {
+                            e.target.setSelectionRange(param.caretPos + 1, param.caretPos + 1);
+                        } else {
+                            e.target.setSelectionRange(param.caretPos - 1, param.caretPos - 1);
+                        }
 
-                // Если длинна текущей строки превышает максимальную длину, то выводим предыдущее состояние
+                        param.caretMoveFlag = false;
+                        param.caretPos = 0;
+                        param.caretMoveUp = false;
 
-                // ----------------------------------
-                // output
-                $self.val(param.strFormatted(param.val));
-                //if($self.val().length > 5)
-                //e.target.setSelectionRange(1, 6);
-                // Устанавливаем каретку в текущее место
-                //e.target.setSelectionRange(param.caretPos+1, param.caretPos+1);
-                // ----------------------------------
+                    }
+
+                }
 
             });
 
@@ -189,7 +299,6 @@
             //maskThree: "x (xxx) xxx-xx-xx",
             //maskFour: "(xxx) xxx-xx-xx",
             //maskFive: "+xxxxxxxxxxxx",
-            backspace: false,
             defaultMask: "+7 (xxx) xxx-xx-xx",
             activeMask: "",
             processingMask: "",
@@ -216,12 +325,10 @@
 
                 if (symbol) {
                     var flag = false;
-                    var arr1 = [0,1,2,3,4,5,6,7,8,9,0];
-                    var arr2 = ["+","(",")","-"];
                     //var backSpace = false;
                     var i;
-                    for (i = 0; i < arr1.length; i += 1) {
-                        if (symbol == arr1[i]) {
+                    for (i = 0; i < this.allowCharCode.length; i += 1) {
+                        if (symbol === this.allowCharCode[i]) {
                             flag = true;
                             return flag;
                         }
@@ -229,8 +336,8 @@
 
                     var j;
                     if (first) {
-                        for (j = 0; j < arr2.length; j += 1) {
-                            if (symbol == arr2[j]) {
+                        for (j = 0; j < this.allowCharCodeFirst.length; j += 1) {
+                            if (symbol === this.allowCharCodeFirst[j]) {
                                 flag = true;
                             }
                         }
@@ -270,7 +377,7 @@
                  } else {
                  return false;
                  }*/
-                /*if (str.length > 0 && pattern.length > 0) {
+                if (str.length > 0 && pattern.length > 0) {
 
                     var result = "";
                     var i;
@@ -279,9 +386,9 @@
                     for (i = 0; i < pattern.length; i += 1) {
                         if( pattern[i] === "x" ){
                             if (str[i] !== undefined) {
-                                /!*
+                                /*
                                  *** Проверяем, есть ли ограничение на конкретный символ
-                                 *!/
+                                 */
                                 if( allowSymbolsArray.length ){
                                     for( var j = 0; j < allowSymbolsArray.length; j++){
                                         if(allowSymbolsArray[j].pos === i && str[i] !== allowSymbolsArray[j].allow){
@@ -303,47 +410,8 @@
                     return result;
                 } else {
                     return false;
-                }*/
-                var pattern = this.processingMask;
-                var newStr = ""; // Строка из чисел, откуда вырезаны все числовые символы, кроме +
-                var allowSymbolsArray = this.allowSymbolsArray;
-                var result = "";
-                str = str.split("");
-
-                for(var i = 0; i < str.length; i++){
-                    if(str[i] === "+" || !isNaN(str[i])){
-                        newStr += str[i];
-                    }
-                }
-                //console.log('--------------');
-                //console.log("pattern = ",pattern);
-                //console.log("newStr = ",newStr);
-
-                var cnt = 0;
-                for(var i = 0; i < pattern.length; i++){
-                    if(pattern[i]==="x"){
-                        /*** Если строка достигла конца ***/
-                        if (newStr[cnt] === undefined) {
-                            break;
-                        }
-
-                        /*** Проверяем, есть ли ограничение на конкретный символ ***/
-                        if( allowSymbolsArray.length ){
-                            for( var j = 0; j < allowSymbolsArray.length; j++){
-                                if(allowSymbolsArray[j].pos === i && newStr[cnt] !== allowSymbolsArray[j].allow){
-                                    return result;
-                                }
-                            }
-                            result += newStr[cnt];
-                            cnt += 1;
-                        }
-
-                    }else{
-                        result += pattern[i];
-                    }
                 }
 
-                return result;
             },
             getCaretPos: function (obj) {
                 // return cursor position in string
@@ -404,7 +472,7 @@
                         arrVal.splice(pos - 1, 1);
                     }
                     for (var i = 0; i < arrVal.length; i += 1) {
-                      rezVal += arrVal[i];
+                        rezVal += arrVal[i];
                     }
                     console.log("rezVal = ", rezVal);
                     this.val = rezVal;
@@ -504,13 +572,8 @@
                 var allowSymbolsArray = [];
 
                 for(var i = 0; i < mask.length; i++ ){
-                    if( ( isNaN(mask[i]) ) || mask[i] === "x" ){
-                        if(mask[i] === "+"){
-                            rez += "x";
-                            allowSymbolsArray.push({pos: i, allow: "+"});
-                        }else {
-                            rez += mask[i];
-                        }
+                    if( isNaN(mask[i]) || mask[i] === "x" ){
+                        rez += mask[i];
                     }else{
                         allowSymbolsArray.push({pos: i, allow: mask[i]});
                         rez += "x";
