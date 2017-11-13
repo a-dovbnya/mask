@@ -17,11 +17,14 @@
                 // Определим начало строки - до первого x
                 param.startOfPattern = param.setStartOfPattern();
 
+                // Обработаем активную маску таким образом, чтобы числовые символы заменить на x
+                param.setProcessingMask();
+
             }
 
             /*$self.on("paste", function(e){
-                console.log(e);
-            });*/
+             console.log(e);
+             });*/
             // get char code
             $self.on("keypress", function (e) {
                 var textComponent;
@@ -83,7 +86,7 @@
                             if (symb !== "-" || symb !== "(" || symb !== ")") {
 
                                 param.deleteSymbol(caretPos, true);
-                                param.formattedVal = param.strFormatted(param.val, param.activeMask);
+                                param.formattedVal = param.strFormatted(param.val, param.processingMask);
 
                                 if (param.formattedVal !== false) {
                                     param.charCode = 0;
@@ -100,6 +103,7 @@
                     }
                     // backspace
                 } else if (e.keyCode === 8) {
+                    console.log("backspace");
                     // backspace
                     // selected text
                     var textComponent = e.target;
@@ -115,30 +119,29 @@
                         // run delete substr
                         param.deleteSubstr(selectedText, startPos, endPos - startPos);
                     } else {
+                        console.log("no selected text");
                         // delete symbol before caret
                         caretPos = param.getCaretPos(e.target);
                         symb = param.formattedVal[caretPos - 1];
 
-                        console.log(caretPos);
-                        /*if (symb === "-" || symb === "(" || symb === ")") {
+                        if (symb === "-" || symb === "(" || symb === ")") {
 
                             param.charCode = 0;
                             param.charSymbol = 0;
 
-                        } else {*/
+                        } else {
 
                             param.deleteSymbol(caretPos);
-                            param.formattedVal = param.strFormatted(param.val, param.activeMask);
+                            param.formattedVal = param.strFormatted(param.val, param.processingMask);
 
                             if (param.formattedVal !== false) {
                                 param.charCode = 0;
                                 param.charSymbol = 0;
-
                                 // output
                                 //$self.val(param.formattedVal);
                             }
 
-                        //}
+                        }
                         param.caretMoveFlag = true;
                         param.caretPos = caretPos;
                     }
@@ -154,22 +157,19 @@
                 param.currentVal = $self.val();
 
                 console.log(param);
-                console.log("charCode = ", charCode);
 
                 if (charCode !== 0) {
 
                     //if (param.val.length === 0) {
-                    //console.log(param.val.length);
-                    //console.log(param.startOfPattern.length);
                     if (param.currentVal.length <= param.startOfPattern.length) {
-                        console.log("dot1");
 
                         // it is first char
                         if (param.checkSymbol(charCode, true)) {
 
                             // Выбираем маску, если она не выбрана
                             if( !param.activeMask.length ) {
-                                param.selectMask(charCode);
+                                param.activeMask = param.defaultMask;
+                                //param.selectMask(charCode);
                             }
                             param.formattedVal = true;
 
@@ -203,7 +203,6 @@
                     } else if (param.val.length < param.limitSymbol && param.selectedSubstr.length === 0) {
                         // is not first char
                         if (param.checkSymbol(charCode)) {
-                            console.log("dot2");
 
                             //if ((param.val.length === 1 && charCode === 57) || param.val.length > 1) {
                             if (param.val.length === 1 || param.val.length > 1) {
@@ -213,7 +212,6 @@
                                 } else {
 
                                     if (param.val.length !== param.limitSymbol) {
-                                        console.log("to insert symbol");
                                         param.insertSymbol();
                                         param.caretMoveFlag = true;
                                         param.caretPos = param.startPos;
@@ -241,7 +239,7 @@
                         param.val = "";
                     }
                     //console.log("formattedVal = ", param.formattedVal);
-                    param.formattedVal = param.strFormatted(param.val, param.activeMask);
+                    param.formattedVal = param.strFormatted(param.val, param.processingMask);
                     param.val = param.formattedVal;
 
                     //onsole.log("formattedVal = ", param.formattedVal);
@@ -272,11 +270,11 @@
                 //param.currentVal = param.formattedVal;
 
                 // move cursor for "-()" symbols
-                /*if (param.caretMoveFlag) {
+                if (param.caretMoveFlag) {
                     $self.val(param.formattedVal);
 
                     console.log("caret Move");
-                    /!*if (param.caretPos > 0) {
+                    if (param.caretPos > 0) {
                         if (param.caretMoveUp) {
                             e.target.setSelectionRange(param.caretPos + 1, param.caretPos + 1);
                         } else {
@@ -287,9 +285,9 @@
                         param.caretPos = 0;
                         param.caretMoveUp = false;
 
-                    }*!/
+                    }
 
-                }*/
+                }
 
             });
 
@@ -297,12 +295,15 @@
     };
     var initParam = function () {
         return {
-            maskOne: "+x (xxx) xxx-xx-xx",
-            maskTwo: "+7 (xxx) xxx-xx-xx",
-            maskThree: "x (xxx) xxx-xx-xx",
-            maskFour: "(xxx) xxx-xx-xx",
-            maskFive: "+xxxxxxxxxxxx",
+            //maskOne: "+x (xxx) xxx-xx-xx",
+            //maskTwo: "+7 (xxx) xxx-xx-xx",
+            //maskThree: "x (xxx) xxx-xx-xx",
+            //maskFour: "(xxx) xxx-xx-xx",
+            //maskFive: "+xxxxxxxxxxxx",
+            defaultMask: "+7 (xxx) xxx-xx-xx",
             activeMask: "",
+            processingMask: "",
+            allowSymbolsArray: [],
             allowCharCode: [48, 49, 50, 51, 52, 53, 54, 55, 56, 57],
             allowCharCodeFirst: [40, 41, 43],
             charCode: 0,
@@ -356,34 +357,62 @@
             },
             strFormatted: function (str, pattern) {
 
-                if (str.length > 0 && pattern.length > 0) {
+                /*if (str.length > 0 && pattern.length > 0) {
+
                     var result = "";
                     var cnt = 0;
                     var i;
-                    console.log("str = ", str);
-                    console.log("pattern = ", pattern);
                     for (i = 0; i < pattern.length; i += 1) {
-                        if( str[i] === pattern[i] || (pattern[i] === "x" && !isNaN(str[i]))){
-                            //console.log("str[cnt] = ", str[cnt]);
+                        if(str[i] === pattern[i] || pattern[i] === "x"){
                             if (str[cnt] !== undefined) {
                                 result += str[cnt];
                                 cnt += 1;
                             } else {
                                 break;
                             }
-                        }else if( pattern[i] === "x" && isNaN(str[i]) ){
-                            // Если удаляем символ в середине строки и появляется несоответствие
-                            // между шаблоном и обрабатываемой строкой
-                            cnt += 1;
-                        }else if(result.length < this.val.length ){
+                        }else{
                             result += pattern[i];
                         }
                     }
-                    console.log("result = ", result );
+                    return result;
+                } else {
+                    return false;
+                }*/
+                if (str.length > 0 && pattern.length > 0) {
+
+                    var result = "";
+                    var i;
+                    var allowSymbolsArray = this.allowSymbolsArray;
+
+                    for (i = 0; i < pattern.length; i += 1) {
+                        if( pattern[i] === "x" ){
+                            if (str[i] !== undefined) {
+                                /*
+                                *** Проверяем, есть ли ограничение на конкретный символ
+                                */
+                                if( allowSymbolsArray.length ){
+                                    for( var j = 0; j < allowSymbolsArray.length; j++){
+                                        if(allowSymbolsArray[j].pos === i && str[i] !== allowSymbolsArray[j].allow){
+                                            return result;
+                                        }
+                                    }
+
+                                }
+
+                                result += str[i];
+
+                            } else {
+                                break;
+                            }
+                        }else{
+                            result += pattern[i];
+                        }
+                    }
                     return result;
                 } else {
                     return false;
                 }
+
             },
             getCaretPos: function (obj) {
                 // return cursor position in string
@@ -408,32 +437,32 @@
                 console.log("pos = ", pos);
                 console.log("del = ", del);
                 /*if (this.activeMask.length > 0) {
-                    var strArr = this.activeMask.split("");
-                    var newPos = 0;
-                    var i;
-                    for (i = 0; i < pos; i += 1) {
-                        if (strArr[i] === "x") {
-                            newPos += 1;
-                        }
-                        if (pos === 0) {
-                            break;
-                        }
-                    }
+                 var strArr = this.activeMask.split("");
+                 var newPos = 0;
+                 var i;
+                 for (i = 0; i < pos; i += 1) {
+                 if (strArr[i] === "x") {
+                 newPos += 1;
+                 }
+                 if (pos === 0) {
+                 break;
+                 }
+                 }
 
-                    var arrVal = this.val.split("");
-                    var rezVal = "";
+                 var arrVal = this.val.split("");
+                 var rezVal = "";
 
-                    if (del) {
-                        arrVal.splice(newPos, 1);
-                    } else {
-                        arrVal.splice(newPos - 1, 1);
-                    }
-                    for (i = 0; i < arrVal.length; i += 1) {
-                        rezVal += arrVal[i];
-                    }
+                 if (del) {
+                 arrVal.splice(newPos, 1);
+                 } else {
+                 arrVal.splice(newPos - 1, 1);
+                 }
+                 for (i = 0; i < arrVal.length; i += 1) {
+                 rezVal += arrVal[i];
+                 }
 
-                    this.val = rezVal;
-                }*/
+                 this.val = rezVal;
+                 }*/
                 //this.val = this.currentVal;
                 var arrVal = this.val.split("");
                 var rezVal = "";
@@ -441,12 +470,13 @@
                     arrVal.splice(newPos, 1);
                 } else {
                     console.log(arrVal[pos - 1]);
-                    //if( !isNaN(parseInt(arrVal[pos - 1])) ) {
+                    if( !isNaN(parseInt(arrVal[pos - 1])) ) {
                         arrVal.splice(pos - 1, 1);
-                    //}
-                    for (var i = 0; i < arrVal.length; i += 1) {
-                        rezVal += arrVal[i];
                     }
+                    rezVal = rezVal.join("");
+                    /*for (var i = 0; i < arrVal.length; i += 1) {
+                        rezVal += arrVal[i];
+                    }*/
                     console.log("rezVal = ", rezVal);
                     this.val = rezVal;
                 }
@@ -488,7 +518,7 @@
                         }
                     }
                     this.val = rezStr;
-                    this.formattedVal = this.strFormatted(this.val, this.activeMask);
+                    this.formattedVal = this.strFormatted(this.val, this.processingMask);
                     this.charCode = 0;
                     this.charSymbol = 0;
                     this.caretMoveFlag = false;
@@ -503,20 +533,15 @@
                     var rezStr = "";
                     var valArr = currentVal.split("");
                     var i;
-                    console.log("startPos = ", this.startPos);
-                    console.log("valArr1 = ", valArr);
                     valArr.splice(this.startPos, 0, String(this.charSymbol));
-                    console.log("valArr = ", valArr);
                     for (i = 0; i < valArr.length; i += 1) {
-                        //if (!Number.isNaN(parseInt(valArr[i]))) {
+                        if (!Number.isNaN(parseInt(valArr[i]))) {
                             rezStr += valArr[i];
-                        //}
+                        }
                     }
-                    console.log("rezStr = ", rezStr);
 
                     this.val = rezStr;
-                    this.formattedVal = this.strFormatted(this.val, this.activeMask);
-                    console.log("strFormatted = ", this.strFormatted(this.val, this.activeMask));
+                    this.formattedVal = this.strFormatted(this.val, this.processingMask);
                     this.charCode = 0;
                     this.charSymbol = 0;
                     this.caretMoveFlag = false;
@@ -539,6 +564,27 @@
 
                 return rez;
 
+            },
+            setProcessingMask: function(){
+                /*
+                ***  Метод обрабатывает активную маску, заменяя числовые символы на "х" для удобства дальнейшего форматирования
+                ***  Разрешенный символ сохраняется в массив allowSymbolsArray
+                */
+                var mask = this.activeMask.split("");
+                var rez = "";
+                var allowSymbolsArray = [];
+
+                for(var i = 0; i < mask.length; i++ ){
+                    if( isNaN(mask[i]) || mask[i] === "x" ){
+                        rez += mask[i];
+                    }else{
+                        allowSymbolsArray.push({pos: i, allow: mask[i]});
+                        rez += "x";
+                    }
+                }
+
+                this.allowSymbolsArray = allowSymbolsArray;
+                this.processingMask = rez;
             }
 
         };
