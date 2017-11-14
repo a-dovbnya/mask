@@ -7,108 +7,72 @@
             var param = new initParam();
             $self.val("");
 
-            // Если маска передана при инициализации и её длина больше 6 символов (минимальная длина номера)
-            if( obj["mask"].length >= 6 ){
+            /*** set mask ***/
+            if( obj["mask"] && obj["mask"].length >= 6 ){
+
+                /*** mask passed at initialization ***/
                 param.activeMask = obj["mask"];
+            }else{
 
-                //this.limitSymbol = count;
-                param.limitSymbol = obj["mask"].length;
-
-                // Определим начало строки - до первого x
-                param.startOfPattern = param.setStartOfPattern();
-
-                // Обработаем активную маску таким образом, чтобы числовые символы заменить на x
-                param.setProcessingMask();
-
+                /*** default mask ***/
+                param.activeMask = param.defaultMask;
             }
+            /*** set limitSymbol ***/
+            param.limitSymbol = param.activeMask.length;
+
+            /*** set start pattern - string before the first occurrence x symbol ***/
+            param.startOfPattern = param.setStartOfPattern();
+
+            /*** replace number symbols to x ***/
+            param.setProcessingMask();
 
             /*$self.on("paste", function(e){
              console.log(e);
              });*/
-            // get char code
-            $self.on("keypress", function (e) {
-                //alert("keyPress");
-                var textComponent;
-                var selectedText;
-                var startPos;
-                var endPos;
 
-                //param.charCode = e.charCode;
-                //param.charSymbol = String.fromCharCode(e.charCode);
-
-                /*if (param.checkSymbol(e.charCode)) {
-                    textComponent = e.target;
-                    selectedText = "";
-
-                    if (textComponent.selectionStart !== undefined) {
-                        startPos = textComponent.selectionStart;
-                        endPos = textComponent.selectionEnd;
-                        selectedText = textComponent.value.substring(startPos, endPos);
-                        param.startPos = startPos;
-                    }
-                    if (selectedText.length > 0) {
-                        if (selectedText.length === param.formattedVal.length) {
-                            param.val = "";
-                            param.formattedVal = "";
-                        } else {
-                            param.selectedSubstr = selectedText;
-                            param.endPos = endPos;
-                        }
-
-                    }
-                }*/
-
-            });
-
-
-            // interception delete and backspace button
+            /*** keydown handler ***/
             $self.on("keydown", function (e) {
-                //alert("keydown");
-                //console.log("e = ", e);
                 param.backspace = false;
 
-                // delete
-                if (e.keyCode === 46) {
+                /*if (e.keyCode === 46) {
                     // delete
 
-                } else if (e.keyCode === 8 || e.keyCode === 229|| e.keyCode === 0) {
-                    // backspace
+                } else*/
+                if (e.keyCode === 8 || e.keyCode === 229|| e.keyCode === 0) {
+                    /*** backspace key ***/
                     param.backspace = true;
-                    $("#output").html("backspace1");
 
                 }
-                $("#keyCode").html("keyCode - "+ e.keyCode);
 
             });
-
+            /*** input handler ***/
             $self.on("input", function (e) {
-                //alert("input");
-                console.log(e);
-                // Предыдущее состояние
+
+                /*** before state ***/
                 var val = param.val;
                 var symbolInMask;
                 var firstFlag = false;
 
-                // Определим позицию коретки
+                /*** get caret position ***/
                 param.caretPos = param.getCaretPos(e.target);
 
-                // Определяем новое состояние
+                /*** get new state***/
                 param.currentVal = $self.val();
-                symbolInMask = param.activeMask[param.currentVal.length - 1];
+                //symbolInMask = param.activeMask[param.currentVal.length - 1];
 
-                // Определяем символ
+                /*** get last symbol ***/
                 param.charSymbol = param.currentVal[param.currentVal.length - 1];
-                $("#lastSymbol").html("Последний введенный символ - "+param.charSymbol);
 
-                // Если вводим первый символ
+                /*** input the first symbol ***/
                 if(param.currentVal.length === 1){
                     firstFlag = true;
                 }
                 // Проверяем, какой символ стоит на текущей позиции в маске
                 if( !param.backspace) {
-                    if (symbolInMask === "x" || symbolInMask === param.charSymbol || parseInt(param.charSymbol) === 7 || parseInt(param.charSymbol) === 8 || parseInt(param.charSymbol) === 9) {
+
+                    //if (symbolInMask === "x" || symbolInMask === param.charSymbol || parseInt(param.charSymbol) === 7 || parseInt(param.charSymbol) === 8 || parseInt(param.charSymbol) === 9) {
+                    if (!isNaN(param.charSymbol) || parseInt(param.charSymbol) === 7 || parseInt(param.charSymbol) === 8 || parseInt(param.charSymbol) === 9) {
                         console.log("in if");
-                        //alert(symbolInMask);
                         if (param.checkSymbol(param.charSymbol, firstFlag)) {
                             // Был введён новый символ и этот символ разрешен
 
@@ -142,40 +106,24 @@
                         $("#output").html("backspace3");
 
                         //alert("backspace");
-                        console.log("backspace");
-                        console.log("Текущее состояние = ", param.currentVal);
                         if (param.currentVal.length <= param.activeMask.length) {
 
-                            /* если последний символ не числовой, то удаляем его */
-                            //alert(param.currentVal[param.currentVal.length - 1]);
-                            if(isNaN(param.currentVal[param.currentVal.length - 1])){
-                                //alert(param.caretPos);
-                                e.target.setSelectionRange(param.caretPos - 1, param.caretPos - 1);
-                                /*param.currentVal = param.currentVal.split("");
-                                console.log("param.currentVal = ",param.currentVal);
-                                param.currentVal = param.currentVal.slice(0,param.currentVal.length - 1);
-                                console.log("param.currentVal = ",param.currentVal);
-                                param.currentVal = param.currentVal.join(",")
-                                console.log("param.currentVal = ",param.currentVal);*/
-                            }
+                            /* если последний символ не числовой, то передвигаем курсор */
+                            //if(!isNaN(param.currentVal[param.currentVal.length - 1]) && param.formattedVal[param.formattedVal.length - 1] == "-"){
+                                //e.target.setSelectionRange(param.caretPos - 1, param.caretPos - 1);
+                            //}
                             param.val = param.currentVal;
                         }
                     }
                 }
 
-
-
-                console.log(param);
-
-                // Если длинна текущей строки превышает максимальную длину, то выводим предыдущее состояние
-
                 // ----------------------------------
                 // output
-                $self.val(param.strFormatted(param.val));
-                //if($self.val().length > 5)
-                //e.target.setSelectionRange(1, 6);
-                // Устанавливаем каретку в текущее место
-                //e.target.setSelectionRange(param.caretPos+1, param.caretPos+1);
+                param.formattedVal = param.strFormatted(param.val);
+                if(param.backspace && isNaN(param.formattedVal[param.formattedVal.length - 1 ]) && !isNaN(param.currentVal[param.currentVal.length - 1]) ){
+                    param.formattedVal = param.formattedVal.slice(0,-1);
+                }
+                $self.val(param.formattedVal);
                 // ----------------------------------
 
             });
@@ -184,11 +132,6 @@
     };
     var initParam = function () {
         return {
-            //maskOne: "+x (xxx) xxx-xx-xx",
-            //maskTwo: "+7 (xxx) xxx-xx-xx",
-            //maskThree: "x (xxx) xxx-xx-xx",
-            //maskFour: "(xxx) xxx-xx-xx",
-            //maskFive: "+xxxxxxxxxxxx",
             backspace: false,
             defaultMask: "+7 (xxx) xxx-xx-xx",
             activeMask: "",
@@ -249,61 +192,6 @@
             },
             strFormatted: function (str, pattern) {
 
-                /*if (str.length > 0 && pattern.length > 0) {
-
-                 var result = "";
-                 var cnt = 0;
-                 var i;
-                 for (i = 0; i < pattern.length; i += 1) {
-                 if(str[i] === pattern[i] || pattern[i] === "x"){
-                 if (str[cnt] !== undefined) {
-                 result += str[cnt];
-                 cnt += 1;
-                 } else {
-                 break;
-                 }
-                 }else{
-                 result += pattern[i];
-                 }
-                 }
-                 return result;
-                 } else {
-                 return false;
-                 }*/
-                /*if (str.length > 0 && pattern.length > 0) {
-
-                    var result = "";
-                    var i;
-                    var allowSymbolsArray = this.allowSymbolsArray;
-
-                    for (i = 0; i < pattern.length; i += 1) {
-                        if( pattern[i] === "x" ){
-                            if (str[i] !== undefined) {
-                                /!*
-                                 *** Проверяем, есть ли ограничение на конкретный символ
-                                 *!/
-                                if( allowSymbolsArray.length ){
-                                    for( var j = 0; j < allowSymbolsArray.length; j++){
-                                        if(allowSymbolsArray[j].pos === i && str[i] !== allowSymbolsArray[j].allow){
-                                            return result;
-                                        }
-                                    }
-
-                                }
-
-                                result += str[i];
-
-                            } else {
-                                break;
-                            }
-                        }else{
-                            result += pattern[i];
-                        }
-                    }
-                    return result;
-                } else {
-                    return false;
-                }*/
                 var pattern = this.processingMask;
                 var newStr = ""; // Строка из чисел, откуда вырезаны все числовые символы, кроме +
                 var allowSymbolsArray = this.allowSymbolsArray;
@@ -315,9 +203,6 @@
                         newStr += str[i];
                     }
                 }
-                //console.log('--------------');
-                //console.log("pattern = ",pattern);
-                //console.log("newStr = ",newStr);
 
                 var cnt = 0;
                 for(var i = 0; i < pattern.length; i++){
@@ -343,6 +228,7 @@
                     }
                 }
 
+                console.log("result = ", result);
                 return result;
             },
             getCaretPos: function (obj) {
